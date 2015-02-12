@@ -88,7 +88,7 @@ if(notNullCols != null && notNullCols.size() > 0) {
 %>
 String bulkSQL_<%=cid%> = "COPY \"" + <%if(("UPDATE").equals(dataAction)||("DELETE").equals(dataAction)) {%>tmpTableName_<%=cid%><% } else {%>tableName_<%=cid%> <%}%>//natus
 + "\"<%=copyColumns.toString()%>FROM STDIN  WITH ";
-java.io.InputStream ip = new java.io.FileInputStream(<%=file%>); 
+java.io.InputStream input_stream_<%=cid%>= new java.io.FileInputStream(<%=file%>); 
 
 <%
 String fileType = ElementParameterParser.getValue(node, "__FILETYPE__");
@@ -234,7 +234,7 @@ if(("UPDATE").equals(dataAction)) {
 			log.info("<%=cid%> - Creating temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
 		<%}%>
 
-        stmtCreateTmp_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>)");
+        stmtCreateTmp_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>)".replaceAll("VARCHAR[(]\\d+?[)]","text"));
         stmtCreateTmp_<%=cid%>.close();
         <%if(isLog4jEnabled){%>
 			log.info("<%=cid%> - Create temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has succeeded.");
@@ -251,8 +251,8 @@ if(("UPDATE").equals(dataAction)) {
 			log.info("<%=cid%> - Bulk inserting data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
 		<%}%>
 
-    org.postgresql.copy.CopyManager a = new  org.postgresql.copy.CopyManager((org.postgresql.core.BaseConnection)conn_<%=cid %>);
- a.copyIn(bulkSQL_<%=cid%>,ip);
+    org.postgresql.copy.CopyManager bulk_stmt_<%=cid%> = new  org.postgresql.copy.CopyManager((org.postgresql.core.BaseConnection)conn_<%=cid %>);
+  bulk_stmt_<%=cid%>.copyIn(bulkSQL_<%=cid%>, input_stream_<%=cid%>);
 		<%if(isLog4jEnabled){%>
 			log.info("<%=cid%> - Bulk insert data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has finished.");
 		<%}%>
@@ -263,9 +263,9 @@ if(("UPDATE").equals(dataAction)) {
 		<%if(isLog4jEnabled){%>
 			log.info("<%=cid%> - Updating <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> from <%=manager.getLProtectedChar()%>"+tmpTableName_<%=cid%>+"<%=manager.getRProtectedChar()%>.");
 		<%}%>
-      Integer rs =  stmtUpdateBulk_<%=cid%>.executeUpdate("<%=manager.getUpdateBulkSQL(columnList)%>");//natus
-      globalMap.put("<%=cid %>_NB_LINE_UPDATED", rs);//natus
-      globalMap.put("<%=cid %>_NB_LINE_MODIFIED", rs);//natus
+      Integer res_<%=cid%> =  stmtUpdateBulk_<%=cid%>.executeUpdate("<%=manager.getUpdateBulkSQL(columnList)%>");//natus
+      globalMap.put("<%=cid %>_NB_LINE_UPDATED", res_<%=cid%>);//natus
+      globalMap.put("<%=cid %>_NB_LINE_MODIFIED", res_<%=cid%>);//natus
       globalMap.put("<%=cid %>_QUERY", "<%=manager.getUpdateBulkSQL(columnList)%>");//natus
 		<%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Update has finished.");%>
         stmtUpdateBulk_<%=cid%>.close();
@@ -295,10 +295,10 @@ if(("UPDATE").equals(dataAction)) {
 		log.debug("<%=cid%> - Bulk SQL:"+bulkSQL_<%=cid%>+".");
 		log.info("<%=cid%> - Inserting records in table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>.");
 	<%}%>
-    org.postgresql.copy.CopyManager a = new  org.postgresql.copy.CopyManager((org.postgresql.core.BaseConnection)conn_<%=cid %>);
-Long rs = a.copyIn(bulkSQL_<%=cid%>,ip);
-globalMap.put("<%=cid %>_NB_LINE_INSERTED", rs.intValue());//natus
-globalMap.put("<%=cid %>_NB_LINE_MODIFIED", rs.intValue());//natus
+    org.postgresql.copy.CopyManager bulk_stmt_<%=cid%> = new  org.postgresql.copy.CopyManager((org.postgresql.core.BaseConnection)conn_<%=cid %>);
+Long res_<%=cid%> =  bulk_stmt_<%=cid%>.copyIn(bulkSQL_<%=cid%>, input_stream_<%=cid%>);
+globalMap.put("<%=cid %>_NB_LINE_INSERTED", res_<%=cid%>.intValue());//natus
+globalMap.put("<%=cid %>_NB_LINE_MODIFIED", res_<%=cid%>.intValue());//natus
 globalMap.put("<%=cid %>_QUERY", bulkSQL_<%=cid%>);//natus
 	<%if(isLog4jEnabled){%>
 		log.info("<%=cid%> - Insert records in table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has finished.");
@@ -330,7 +330,7 @@ StringBuilder keyColumns = new StringBuilder("");
 			log.info("<%=cid%> - Creating temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
 		<%}%>
 
-        stmtCreateTmp_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>)");
+        stmtCreateTmp_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>)".replaceAll("VARCHAR[(]\\d+?[)]","text"));
         stmtCreateTmp_<%=cid%>.close();
         <%if(isLog4jEnabled){%>
 			log.info("<%=cid%> - Create temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has succeeded.");
@@ -347,8 +347,8 @@ StringBuilder keyColumns = new StringBuilder("");
 			log.info("<%=cid%> - Bulk inserting data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
 		<%}%>
 
-    org.postgresql.copy.CopyManager a = new  org.postgresql.copy.CopyManager((org.postgresql.core.BaseConnection)conn_<%=cid %>);
- a.copyIn(bulkSQL_<%=cid%>,ip);
+    org.postgresql.copy.CopyManager bulk_stmt_<%=cid%> = new  org.postgresql.copy.CopyManager((org.postgresql.core.BaseConnection)conn_<%=cid %>);
+  bulk_stmt_<%=cid%>.copyIn(bulkSQL_<%=cid%>, input_stream_<%=cid%>);
 		<%if(isLog4jEnabled){%>
 			log.info("<%=cid%> - Bulk insert data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has finished.");
 		<%}%>
@@ -359,9 +359,9 @@ StringBuilder keyColumns = new StringBuilder("");
 		<%if(isLog4jEnabled){%>
 			log.info("<%=cid%> - Updating <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> from <%=manager.getLProtectedChar()%>"+tmpTableName_<%=cid%>+"<%=manager.getRProtectedChar()%>.");
 		<%}%>
-      Integer rs =  stmtUpdateBulk_<%=cid%>.executeUpdate("DELETE FROM \"" + tableName_<%=cid%> + "\" WHERE (" + <%=keyColumns.toString()%> + ") IN ( SELECT " +<%=keyColumns.toString()%>+ " FROM \"" + tmpTableName_<%=cid%> + "\")");//natus
-      globalMap.put("<%=cid %>_NB_LINE_DELETED", rs);//natus
-      globalMap.put("<%=cid %>_NB_LINE_MODIFIED", rs);//natus
+      Integer res_<%=cid%> =  stmtUpdateBulk_<%=cid%>.executeUpdate("DELETE FROM \"" + tableName_<%=cid%> + "\" WHERE (" + <%=keyColumns.toString()%> + ") IN ( SELECT " +<%=keyColumns.toString()%>+ " FROM \"" + tmpTableName_<%=cid%> + "\")");//natus
+      globalMap.put("<%=cid %>_NB_LINE_DELETED", res_<%=cid%>);//natus
+      globalMap.put("<%=cid %>_NB_LINE_MODIFIED", res_<%=cid%>);//natus
       globalMap.put("<%=cid %>_QUERY", "DELETE FROM \"" + tableName_<%=cid%> + "\" WHERE (" + <%=keyColumns.toString()%> + ") IN ( SELECT " +<%=keyColumns.toString()%>+ " FROM \"" + tmpTableName_<%=cid%> + "\")");//natus
 		<%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Update has finished.");%>
         stmtUpdateBulk_<%=cid%>.close();
