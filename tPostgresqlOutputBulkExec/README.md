@@ -7,3 +7,4 @@
 - added "use an existing connection"
 - corrected some minor bug
 - you can use CSV but have to use comforming string option
+- added "skip serial" option when bulk insert to skip the serial column and let database calcul

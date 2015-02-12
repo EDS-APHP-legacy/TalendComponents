@@ -7,6 +7,7 @@ imports="
     org.talend.core.model.metadata.MetadataTalendType    
     org.talend.core.model.metadata.MappingTypeRetriever    
 java.io.FileInputStream
+java.util.Iterator
     java.util.List
     java.util.ArrayList    
     java.util.Map
@@ -25,6 +26,7 @@ String dataAction = ElementParameterParser.getValue(node,"__DATA_ACTION__");
 boolean standardConformingString= ("true").equals(ElementParameterParser.getValue(node,"__STANDARD_CONFORMING_STRING__"));
 boolean convertToUppercase = false; // not active this function
 boolean useExistingConnection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+boolean skipSerial = "true".equals(ElementParameterParser.getValue(node, "__SKIP_SERIAL__"));
 %>
 int deletedCount_<%=cid%>=0;
 String tableName_<%=cid%> = null;
@@ -53,6 +55,15 @@ if(("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) {
 }
 String file = ElementParameterParser.getValue(node, "__FILENAME__");
 List<IMetadataColumn> columnList = getColumnList(node);
+
+			if(skipSerial){//natus
+				for (Iterator<IMetadataColumn> iter = columnList.listIterator(); iter.hasNext(); ) {
+					IMetadataColumn col = iter.next();
+					if (col.getType().equalsIgnoreCase("SERIAL")) {
+						iter.remove();
+					}
+				}
+			}  
 StringBuilder copyColumns = new StringBuilder("");
 if(columnList != null && columnList.size() > 0) {
     copyColumns.append(" (");
