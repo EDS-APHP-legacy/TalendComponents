@@ -78,10 +78,13 @@ java.sql.Connection conn_<%=cid%> = null;
 	%>
 String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT WITH DELIMITER AS '\t' NULL AS '' CSV ENCODING 'UTF-8' QUOTE '\"' ESCAPE AS '\\' FORCE QUOTE *";
      org.postgresql.copy.PGCopyInputStream bulkInput_<%=cid%> = new  org.postgresql.copy.PGCopyInputStream((org.postgresql.core.BaseConnection)conn_<%=cid %>,bulkInputSql<%=cid%>);//natus
-class Test {
+
+class FastSplit {
+
 String strToSplit;
-public Test(String strToSplit){
-this.strToSplit = strToSplit.substring(0,strToSplit.length()-2);
+
+public FastSplit(String strToSplit){
+this.strToSplit = strToSplit.substring(0,strToSplit.length()-2);//remove the 2 last chars of the csv lines -> "\n
 }
 
 public String[] split(String delimiter) {
@@ -97,5 +100,5 @@ public String[] split(String delimiter) {
 }
 
 }
-while((bulkInput_<%=cid%>.read())>0){
-String[] ligne = (new Test((new String(bulkInput_<%=cid%>.readFromCopy())))).split("\"\t\"");
+while((bulkInput_<%=cid%>.read())>0){//removes the first char of the csv line -> "
+String[] line_<%=cid%> = (new FastSplit((new String(bulkInput_<%=cid%>.readFromCopy())))).split("\"\t\"");

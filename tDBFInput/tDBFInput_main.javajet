@@ -1,0 +1,129 @@
+<%@ jet 
+imports="
+    	org.talend.core.model.process.INode 
+    	org.talend.core.model.process.ElementParameterParser 
+		org.talend.core.model.metadata.IMetadataTable 
+		org.talend.core.model.metadata.IMetadataColumn
+		org.talend.designer.codegen.config.CodeGeneratorArgument
+		org.talend.core.model.process.IConnection
+		org.talend.core.model.process.IConnectionCategory
+		org.talend.core.model.metadata.types.JavaTypesManager
+		org.talend.core.model.metadata.types.JavaType		
+		java.util.List
+		java.util.ArrayList
+		java.util.Map
+		"
+%>
+
+<%
+CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+INode node = (INode)codeGenArgument.getArgument();
+String cid = node.getUniqueName();
+String trimStringCol = ElementParameterParser.getValue(node, "__TRIM_STRING_COLUMN__");
+%>
+java.util.Iterator<nl.knaw.dans.common.dbflib.Record> iterator<%=cid %> = table<%=cid %>.recordIterator();
+
+		    while (iterator<%=cid %>.hasNext())
+		    {
+		    	nl.knaw.dans.common.dbflib.Record record<%=cid %> = iterator<%=cid %>.next();
+
+		    	
+<%
+List<IMetadataTable> metadatas = node.getMetadataList();
+if ((metadatas!=null)&&(metadatas.size()>0)) {//1
+    IMetadataTable metadata = metadatas.get(0);
+    if (metadata!=null) {//2
+    
+            
+
+		
+    	List< ? extends IConnection> conns = node.getOutgoingSortedConnections();
+    	for (IConnection conn : conns) {//3
+    		if (conn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA)) {//4
+%>
+///////////////////////		
+						
+<%  
+    			List<IMetadataColumn> columns = metadata.getListColumns();
+    			int sizeColumns = columns.size();
+%>
+
+<%    			
+    			for (int i = 0; i < sizeColumns; i++) {//5
+			IMetadataColumn column = columns.get(i);
+			
+			
+  			if ("id_String".equals(column.getTalendType())){
+    				
+%>
+
+<%=conn.getName() %>.<%=column.getLabel() %>=record<%=cid  %>.getStringValue("<%=column.getLabel() %>")<%if("true".equals(trimStringCol)){%>.trim()<%}%>;
+<%
+}else if ("id_Date".equals(column.getTalendType())){
+%>            
+<%=conn.getName() %>.<%=column.getLabel() %>=record<%=cid  %>.getDateValue("<%=column.getLabel() %>");
+<%
+}else if ("id_Boolean".equals(column.getTalendType())){
+%>            
+<%=conn.getName() %>.<%=column.getLabel() %>=record<%=cid  %>.getBooleanValue("<%=column.getLabel() %>");
+<%
+}else if ("id_byte[]".equals(column.getTalendType())){
+%>
+<%=conn.getName() %>.<%=column.getLabel() %>=record<%=cid  %>.getRawValue("<%=column.getLabel() %>");
+<%
+}else if ("id_Long".equals(column.getTalendType())){
+%>
+Number <%=column.getLabel() %><%=cid %>=record<%=cid  %>.getNumberValue("<%=column.getLabel() %>");
+if (<%=column.getLabel() %><%=cid %>!=null)
+	<%=conn.getName() %>.<%=column.getLabel() %>=new Long(<%=column.getLabel() %><%=cid %>.longValue());
+else
+	<%=conn.getName() %>.<%=column.getLabel() %>=null;
+<%
+}else if ("id_Float".equals(column.getTalendType())){
+%>
+Number <%=column.getLabel() %><%=cid %>=record<%=cid  %>.getNumberValue("<%=column.getLabel() %>");
+if (<%=column.getLabel() %><%=cid %>!=null)
+	<%=conn.getName() %>.<%=column.getLabel() %>=new Float(<%=column.getLabel() %><%=cid %>.floatValue());
+else
+	<%=conn.getName() %>.<%=column.getLabel() %>=null;
+<%
+}else if ("id_Short".equals(column.getTalendType())){
+%>
+Number <%=column.getLabel() %><%=cid %>=record<%=cid  %>.getNumberValue("<%=column.getLabel() %>");
+if (<%=column.getLabel() %><%=cid %>!=null)
+	<%=conn.getName() %>.<%=column.getLabel() %>=new Short(<%=column.getLabel() %><%=cid %>.shortValue());
+else
+	<%=conn.getName() %>.<%=column.getLabel() %>=null;
+<%
+}else if ("id_Integer".equals(column.getTalendType())){
+%>
+Number <%=column.getLabel() %><%=cid %>=record<%=cid  %>.getNumberValue("<%=column.getLabel() %>");
+if (<%=column.getLabel() %><%=cid %>!=null)
+	<%=conn.getName() %>.<%=column.getLabel() %>=new Float(<%=column.getLabel() %><%=cid %>.intValue());
+else
+	<%=conn.getName() %>.<%=column.getLabel() %>=null;
+<%
+}else if ("id_Double".equals(column.getTalendType())){
+%>
+Number <%=column.getLabel() %><%=cid %>=record<%=cid  %>.getNumberValue("<%=column.getLabel() %>");
+if (<%=column.getLabel() %><%=cid %>!=null)
+	<%=conn.getName() %>.<%=column.getLabel() %>=new Double(<%=column.getLabel() %><%=cid %>.doubleValue());
+else
+	<%=conn.getName() %>.<%=column.getLabel() %>=null;
+<%
+}else{
+%>
+<%=conn.getName() %>.<%=column.getLabel() %>=record<%=cid  %>.getStringValue("<%=column.getLabel() %>")<%if("true".equals(trimStringCol)){%>.trim()<%}%>;
+<%
+}
+				}//5
+				%>
+				
+<%
+    		}//4
+		
+    	}//3
+    }//2
+}//1
+
+%>

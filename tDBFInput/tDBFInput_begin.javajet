@@ -1,0 +1,75 @@
+<%@ jet 
+imports="
+    	org.talend.core.model.process.INode 
+    	org.talend.core.model.process.ElementParameterParser 
+		org.talend.core.model.metadata.IMetadataTable 
+		org.talend.core.model.metadata.IMetadataColumn
+		org.talend.designer.codegen.config.CodeGeneratorArgument
+		org.talend.core.model.process.IConnection
+		org.talend.core.model.process.IConnectionCategory
+		org.talend.core.model.metadata.types.JavaTypesManager
+		org.talend.core.model.metadata.types.JavaType		
+		java.util.List
+		java.util.Map
+		"
+%>
+<%
+CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+INode node = (INode)codeGenArgument.getArgument();
+String source = ElementParameterParser.getValue(node, "__FILENAME__");
+String debug = ElementParameterParser.getValue(node, "__DEBUG__");
+String schema = ElementParameterParser.getValue(node, "__SCHEMANAME__");
+String encoding = ElementParameterParser.getValue(node, "__ENCODING__");
+String cid = node.getUniqueName();
+%>
+
+nl.knaw.dans.common.dbflib.Table table<%=cid %> = new nl.knaw.dans.common.dbflib.Table(new java.io.File(<%=source %>),<%=encoding%>);
+
+table<%=cid %>.open(nl.knaw.dans.common.dbflib.IfNonExistent.ERROR);
+<%
+if ("true".equals(debug)){
+%>
+java.io.File f=new java.io.File(<%=schema %>);
+java.io.FileOutputStream fop=new java.io.FileOutputStream(f);
+fop.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".getBytes());
+fop.write("<schema>\n".getBytes());
+
+java.util.List<nl.knaw.dans.common.dbflib.Field> fields_<%=cid %>=table<%=cid %>.getFields();
+for (int i=0; i<fields_<%=cid %>.size();i++){
+	fop.write(("<column comment=\"\" default=\"\" key=\"false\" nullable=\"true\" label=\""+fields_<%=cid %>.get(i).getName()+"\"\n").getBytes());
+	fop.write(("originalDbColumnName=\""+fields_<%=cid %>.get(i).getName()+"\" ").getBytes());
+	fop.write(("length=\""+fields_<%=cid %>.get(i).getLength()+"\" ").getBytes());
+	if (fields_<%=cid %>.get(i).getDecimalCount()>0)
+		fop.write(("precision=\""+fields_<%=cid %>.get(i).getDecimalCount()+"\" ").getBytes());
+	else
+		fop.write(("precision=\"-1\" ").getBytes());
+	if (nl.knaw.dans.common.dbflib.Type.CHARACTER==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_String\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.FLOAT==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_Double\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.NUMBER==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_Long\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.DATE==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"dd-MM-yyyy\" talendType=\"id_Date\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.MEMO==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_String\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.BINARY==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_byte[]\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.LOGICAL==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_Boolean\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.GENERAL==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_String\" />\n".getBytes());
+	else if (nl.knaw.dans.common.dbflib.Type.PICTURE==fields_<%=cid %>.get(i).getType())
+		fop.write("pattern=\"\" talendType=\"id_byte[]\" />\n".getBytes());
+	else
+		fop.write("talendType=\"id_String\" />\n".getBytes());
+	
+}
+fop.write("</schema>\n".getBytes());
+fop.flush();
+fop.close();
+<%
+}
+%>
+
+

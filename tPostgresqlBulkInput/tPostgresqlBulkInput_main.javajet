@@ -35,16 +35,16 @@ if ((metadatas != null) && (metadatas.size() > 0))
      JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
 if(JavaTypesManager.isNumberType(javaType,true)){
 %>
- <%=outputConnName %>.<%=column.getLabel() %> = "".equals(ligne[<%=i%>]) ? null :Integer.valueOf(ligne[<%=i%>]) ;
+ <%=outputConnName %>.<%=column.getLabel() %> = "".equals(line_<%=cid%>[<%=i%>]) ? null :Integer.valueOf(line_<%=cid%>[<%=i%>]) ;
 <%
 }else if(javaType == JavaTypesManager.STRING || javaType == JavaTypesManager.OBJECT){
 %>
- <%=outputConnName %>.<%=column.getLabel() %> = "".equals(ligne[<%=i%>]) ? null : ligne[<%=i%>] ;
+ <%=outputConnName %>.<%=column.getLabel() %> = "".equals(line_<%=cid%>[<%=i%>]) ? null : line_<%=cid%>[<%=i%>] ;
 <%
 }else if(javaType == JavaTypesManager.DATE){
 					String patternValue = column.getPattern() == null || column.getPattern().trim().length() == 0 ? null : column.getPattern();
 %>
- <%=outputConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(ligne[<%=i%>], <%= patternValue %>); ;
+ <%=outputConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(line_<%=cid%>[<%=i%>], <%= patternValue %>); ;
 <%
 
 } 
