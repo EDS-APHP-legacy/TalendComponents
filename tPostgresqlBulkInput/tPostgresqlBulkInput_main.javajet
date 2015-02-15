@@ -1,0 +1,56 @@
+<%@ jet 
+	imports="
+	org.talend.core.model.metadata.IMetadataColumn
+	org.talend.core.model.metadata.IMetadataTable
+	org.talend.core.model.process.EConnectionType
+	org.talend.core.model.process.IConnection
+	org.talend.core.model.process.INode
+	org.talend.designer.codegen.config.CodeGeneratorArgument
+	java.util.List
+	org.talend.core.model.metadata.types.JavaTypesManager
+	org.talend.core.model.metadata.types.JavaType
+	" 
+%>
+<%
+CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+INode node = (INode)codeGenArgument.getArgument();
+String cid = node.getUniqueName();
+
+List<IMetadataTable> metadatas = node.getMetadataList();
+if ((metadatas != null) && (metadatas.size() > 0)) 
+{//b
+ IMetadataTable metadata = metadatas.get(0);
+ if (metadata != null) 
+ {//a
+  List<IMetadataColumn> columns = metadata.getListColumns();	
+  List< ? extends IConnection> outConns = node.getOutgoingConnections();
+  for (IConnection conn : outConns) 
+  { //2	
+   if (conn.getLineStyle().equals(EConnectionType.FLOW_MAIN)||conn.getLineStyle().equals(EConnectionType.FLOW_MERGE))
+   { //3
+    String outputConnName = conn.getName();
+    for (int i = 0; i < columns.size(); i++) 
+    {//4
+     IMetadataColumn column = columns.get(i);
+     JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
+if(JavaTypesManager.isNumberType(javaType,true)){
+%>
+ <%=outputConnName %>.<%=column.getLabel() %> = "".equals(ligne[<%=i%>]) ? null :Integer.valueOf(ligne[<%=i%>]) ;
+<%
+}else if(javaType == JavaTypesManager.STRING || javaType == JavaTypesManager.OBJECT){
+%>
+ <%=outputConnName %>.<%=column.getLabel() %> = "".equals(ligne[<%=i%>]) ? null : ligne[<%=i%>] ;
+<%
+}else if(javaType == JavaTypesManager.DATE){
+					String patternValue = column.getPattern() == null || column.getPattern().trim().length() == 0 ? null : column.getPattern();
+%>
+ <%=outputConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(ligne[<%=i%>], <%= patternValue %>); ;
+<%
+
+} 
+    }//4
+   }//3
+  }//2
+ }//a
+}//b
+%>

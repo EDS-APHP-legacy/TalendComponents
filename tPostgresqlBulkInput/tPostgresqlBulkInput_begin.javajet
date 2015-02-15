@@ -1,0 +1,101 @@
+<%@ jet 
+	imports="
+    org.talend.core.model.process.INode 
+    org.talend.core.model.process.ElementParameterParser 
+    org.talend.designer.codegen.config.CodeGeneratorArgument
+    org.talend.core.model.metadata.IMetadataTable 
+    org.talend.core.model.metadata.IMetadataColumn
+    org.talend.core.model.metadata.MetadataTalendType    
+    org.talend.core.model.metadata.MappingTypeRetriever    
+    org.talend.core.model.process.IConnection
+    org.talend.core.model.process.IConnectionCategory
+    java.io.*
+    java.util.Scanner
+    java.math.BigInteger
+    java.util.Iterator
+    java.util.List
+    java.util.ArrayList    
+    java.util.Map
+    java.util.HashMap
+java.lang.StringBuilder
+	" 
+skeleton="../templates/db_output_bulk.skeleton" 
+%>
+<%@ include file="../templates/Log4j/Log4jDBConnUtil.javajet"%>
+<%
+CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+INode node = (INode)codeGenArgument.getArgument();
+String cid = node.getUniqueName();
+String table = ElementParameterParser.getValue(node, "__TABLE__");
+String dbSchema = ElementParameterParser.getValue(node, "__SCHEMA_DB__");
+boolean useExistingConnection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+String dbquery= ElementParameterParser.getValue(node, "__QUERY__");
+dbquery = org.talend.core.model.utils.NodeUtil.replaceCRLFInMEMO_SQL(dbquery).replaceAll("^\"|\"$","");
+String host = ElementParameterParser.getValue(node, "__HOST__");
+String port = ElementParameterParser.getValue(node, "__PORT__");
+String dbName = ElementParameterParser.getValue(node, "__DBNAME__");
+String userName = ElementParameterParser.getValue(node, "__USER__");
+String file_out = ElementParameterParser.getValue(node, "__FILENAME_OUT__");
+%> 
+String tableName_<%=cid%> = null;
+String dbschema_<%=cid%> = null;
+<%
+if(useExistingConnection) {
+	%>
+	dbschema_<%=cid%> = (String)globalMap.get("schema_" + "<%=ElementParameterParser.getValue(node,"__CONNECTION__")%>");
+	<%
+} else {
+	%>
+	dbschema_<%=cid%> = <%=dbSchema%>;
+	<%
+}
+%>
+java.sql.Connection conn_<%=cid%> = null;
+	<%
+	if(useExistingConnection) {
+    		String conn = "conn_" + ElementParameterParser.getValue(node,"__CONNECTION__");
+	%>
+	 	conn_<%=cid%> = (java.sql.Connection)globalMap.get("<%=conn%>");
+	 <%
+	 	log4jCodeGenerateUtil.useExistConnection(node);
+	 } else {
+	 %>
+	 	String driverClass_<%=cid%> = "org.postgresql.Driver";
+		java.lang.Class.forName(driverClass_<%=cid%>).newInstance();
+		String url_<%=cid%> = "jdbc:postgresql://" + <%=host%> + ":" + <%=port%> + "/" + <%=dbName%>;
+		String dbUser_<%=cid%> = <%=userName%>;
+		<%
+		String passwordFieldName = "__PASS__";
+		%>
+		
+		<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
+	   	
+		String dbPwd_<%=cid%> = decryptedPassword_<%=cid%>;
+	<%
+		log4jCodeGenerateUtil.debugConnectionParams(node);
+		log4jCodeGenerateUtil.connect(node);
+	}
+	%>
+String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT WITH DELIMITER AS '\t' NULL AS '' CSV ENCODING 'UTF-8' QUOTE '\"' ESCAPE AS '\\' FORCE QUOTE *";
+     org.postgresql.copy.PGCopyInputStream bulkInput_<%=cid%> = new  org.postgresql.copy.PGCopyInputStream((org.postgresql.core.BaseConnection)conn_<%=cid %>,bulkInputSql<%=cid%>);//natus
+class Test {
+String strToSplit;
+public Test(String strToSplit){
+this.strToSplit = strToSplit.substring(0,strToSplit.length()-2);
+}
+
+public String[] split(String delimiter) {
+	java.util.List<String> arr = new java.util.ArrayList<String>();
+	int foundPosition;
+	int startIndex = 0;
+	while ((foundPosition = strToSplit.indexOf(delimiter, startIndex)) > -1) {
+		arr.add(strToSplit.substring(startIndex, foundPosition));
+		startIndex = foundPosition + delimiter.length();
+	}
+	arr.add(strToSplit.substring(startIndex));
+	return arr.toArray(new String[arr.size()]);
+}
+
+}
+while((bulkInput_<%=cid%>.read())>0){
+String[] ligne = (new Test((new String(bulkInput_<%=cid%>.readFromCopy())))).split("\"\t\"");
