@@ -9,6 +9,7 @@
 		org.talend.designer.codegen.config.CodeGeneratorArgument
 		org.talend.core.model.metadata.types.JavaTypesManager
 		org.talend.core.model.metadata.types.JavaType
+    java.math.BigInteger
 	" 
 %>
 <%@ include file="../templates/Log4j/Log4jDBConnUtil.javajet"%>
@@ -20,7 +21,7 @@ String table = ElementParameterParser.getValue(node, "__TABLE__");
 String dbSchema = ElementParameterParser.getValue(node, "__SCHEMA_DB__");
 boolean useExistingConnection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
 %>
-}
+//}
 
      globalMap.put("<%=cid %>_NB_LINE", ((Long)bulkInput_<%=cid%>.getHandledRowCount()).intValue());//natus
 <%

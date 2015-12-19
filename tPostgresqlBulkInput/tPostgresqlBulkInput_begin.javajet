@@ -35,7 +35,7 @@ String host = ElementParameterParser.getValue(node, "__HOST__");
 String port = ElementParameterParser.getValue(node, "__PORT__");
 String dbName = ElementParameterParser.getValue(node, "__DBNAME__");
 String userName = ElementParameterParser.getValue(node, "__USER__");
-String file_out = ElementParameterParser.getValue(node, "__FILENAME_OUT__");
+String fileOut = ElementParameterParser.getValue(node, "__FILENAME_OUT__");
 %> 
 String tableName_<%=cid%> = null;
 String dbschema_<%=cid%> = null;
@@ -76,15 +76,41 @@ java.sql.Connection conn_<%=cid%> = null;
 		log4jCodeGenerateUtil.connect(node);
 	}
 	%>
-String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT WITH DELIMITER AS '\t' NULL AS '' CSV ENCODING 'UTF-8' QUOTE '\"' ESCAPE AS '\\' FORCE QUOTE *";
+String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT WITH DELIMITER AS ';' NULL AS '' CSV HEADER ENCODING 'UTF-8' QUOTE '\"'  FORCE QUOTE *";
      org.postgresql.copy.PGCopyInputStream bulkInput_<%=cid%> = new  org.postgresql.copy.PGCopyInputStream((org.postgresql.core.BaseConnection)conn_<%=cid %>,bulkInputSql<%=cid%>);//natus
 
 class FastSplit {
 
-String strToSplit;
+private String strToSplit;
 
-public FastSplit(String strToSplit){
-this.strToSplit = strToSplit.substring(0,strToSplit.length()-2);//remove the 2 last chars of the csv lines -> "\n
+public FastSplit(String first, String strToSplit){
+StringBuilder br = new StringBuilder();
+br.append(first);
+br.append(strToSplit);
+this.strToSplit = replace(br.toString(),"#@","\"\"").substring(1,br.toString().length()-2);
+}
+
+private String replace (String source, String os, String ns) {
+    int i = 0;
+    if ((i = source.indexOf(os, i)) >= 0) {
+        char[] sourceArray = source.toCharArray();
+        char[] nsArray = ns.toCharArray();
+        int oLength = os.length();
+        StringBuilder buf = new StringBuilder (sourceArray.length);
+        buf.append (sourceArray, 0, i).append(nsArray);
+        i += oLength;
+        int j = i;
+        // Replace all remaining instances of oldString with newString.
+        while ((i = source.indexOf(os, i)) > 0) {
+            buf.append (sourceArray, j, i - j).append(nsArray);
+            i += oLength;
+            j = i;
+        }
+        buf.append (sourceArray, j, sourceArray.length - j);
+        source = buf.toString();
+        buf.setLength (0);
+    }
+    return source;
 }
 
 public String[] split(String delimiter) {
@@ -100,5 +126,14 @@ public String[] split(String delimiter) {
 }
 
 }
-while((bulkInput_<%=cid%>.read())>0){//removes the first char of the csv line -> "
-String[] line_<%=cid%> = (new FastSplit((new String(bulkInput_<%=cid%>.readFromCopy())))).split("\"\t\"");
+ java.io.FileOutputStream output<%=cid%> = new java.io.FileOutputStream(new java.io.File(<%=fileOut%>));
+Integer resultBulkInput<%=cid%> ;
+while((resultBulkInput<%=cid%> = bulkInput_<%=cid%>.read())>0){
+output<%=cid%>.write(resultBulkInput<%=cid%>);
+output<%=cid%>.write( bulkInput_<%=cid%>.readFromCopy());
+}
+output<%=cid%>.close();
+
+//Integer res<%=cid%>;
+//while((res<%=cid%> = bulkInput_<%=cid%>.read())>0){//removes the first char of the csv line -> "
+//String[] line_<%=cid%> = (new FastSplit(new String(java.math.BigInteger.valueOf(res<%=cid%>).toByteArray()),new String(bulkInput_<%=cid%>.readFromCopy()))).split("\"|\"");
