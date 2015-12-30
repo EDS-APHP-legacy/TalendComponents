@@ -36,6 +36,7 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
         
         boolean isIncludeHeader = ("true").equals(ElementParameterParser.getValue(node,"__INCLUDEHEADER__"));
 boolean skipSerial = ("true").equals(ElementParameterParser.getValue(node, "__SKIP_SERIAL__"));
+boolean onlyKey = ("true").equals(ElementParameterParser.getValue(node, "__ONLY_KEY__"));
 %>
 		int nb_line_<%=cid%> = 0;
 		
@@ -71,6 +72,14 @@ if( skipSerial ){
 for (Iterator<IMetadataColumn> iter = columns.listIterator(); iter.hasNext(); ) {
 	IMetadataColumn col = iter.next();
 	if (col.getType().equalsIgnoreCase("SERIAL")) {
+		iter.remove();
+	}
+}
+}
+if( onlyKey ){
+for (Iterator<IMetadataColumn> iter = columns.listIterator(); iter.hasNext(); ) {
+	IMetadataColumn col = iter.next();
+	if (!col.isKey()) {
 		iter.remove();
 	}
 }
