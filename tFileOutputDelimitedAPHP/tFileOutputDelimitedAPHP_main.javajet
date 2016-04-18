@@ -185,7 +185,7 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
                             String pattern = column.getPattern() == null || column.getPattern().trim().length() == 0 ? null : column.getPattern();
                             if (javaType == JavaTypesManager.DATE && pattern != null && pattern.trim().length() != 0) {
                             %>
-                            FormatterUtils.format_Date(<%=conn.getName() %>.<%=column.getLabel() %>, <%= pattern %>)
+    						FormatterUtils.format_Date(<%=conn.getName() %>.<%=column.getLabel() %>, "yyyy-MM-dd HH:mm:ss")
                             <%
                             } else if(advancedSeparator && JavaTypesManager.isNumberType(javaType, column.isNullable())) {
                             %>
@@ -579,7 +579,7 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
                             %><%=conn.getName() %>.<%=column.getLabel() %>;
                             <%
                                 }else if(javaType == JavaTypesManager.DATE && pattern != null){
-                            %>FormatterUtils.format_Date(<%=conn.getName() %>.<%=column.getLabel() %>, <%= pattern %>);
+                			%>FormatterUtils.format_Date(<%=conn.getName() %>.<%=column.getLabel() %>, "yyyy-MM-dd HH:mm:ss");
                             <%
                                 }else if(javaType == JavaTypesManager.BYTE_ARRAY){
                             %>java.nio.charset.Charset.defaultCharset().decode(java.nio.ByteBuffer.wrap(<%=conn.getName() %>.<%=column.getLabel() %>)).toString();
