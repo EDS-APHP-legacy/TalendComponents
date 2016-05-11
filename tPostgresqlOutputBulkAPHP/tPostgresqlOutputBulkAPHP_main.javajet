@@ -9,8 +9,14 @@
 		org.talend.core.model.metadata.types.JavaTypesManager
 		org.talend.core.model.metadata.types.JavaType
 		java.util.List
-java.util.Iterator
+        java.util.Iterator
 		org.talend.core.model.process.ElementParameterParser
+
+        import java.io.BufferedOutputStream
+        import java.io.DataOutputStream
+        import java.io.IOException
+        import java.io.OutputStream
+        java.util.concurrent.TimeUnit
 	"
 %>
 <%@ include file="../templates/Log4j/Log4jFileUtil.javajet"%> 
@@ -55,6 +61,12 @@ for (Iterator<IMetadataColumn> iter = columns.listIterator(); iter.hasNext(); ) 
 }
     			int sizeColumns = columns.size();
     			//for bug TDI-22555
+
+    		if("BINARYFILE".equals(fileType)){//add the number of columns
+%>
+buffer_<%=cid%>.writeShort((short)<%=sizeColumns%>);
+<%
+}
 %>
                	String[] row_<%=cid%>=new String[]{<%for(int j=0;j<sizeColumns;j++){if(j != 0) {%>, <%}%><%=nullString%><%}%>};
 boolean[] bool_<%=cid%> = new boolean[<%=sizeColumns%>];
@@ -71,41 +83,193 @@ if("dm_secu".equals(<%="\""+column.getLabel()+"\"" %>)){
 					JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
 					String pattern = column.getPattern() == null || column.getPattern().trim().length() == 0 ? null : column.getPattern();
 					if(JavaTypesManager.isJavaPrimitiveType( column.getTalendType(), column.isNullable())){
+    		if("BINARYFILE".equals(fileType)){
+%>
+    //foreach column of this line...
+             // System.out.println(<%=javaType%>);
+            buffer_<%=cid%>.writeInt(4);
+            buffer_<%=cid%>.writeInt(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+    			}else{//not binary
 %>
                         	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
 <%
+                      }
 					}else {
 %>   				
 				       	if(<%=conn.getName() %>.<%=column.getLabel() %> != null ){
 <%                  
                     		if(javaType == JavaTypesManager.STRING ){
+    		if("BINARYFILE".equals(fileType)){
+%>
+            String string_<%=cid%> = <%=conn.getName() %>.<%=column.getLabel() %>;
+
+            final byte[] utf8Bytes_<%=cid%> = string_<%=cid%>.getBytes("UTF-8");
+            buffer_<%=cid%>.writeInt(utf8Bytes_<%=cid%>.length);
+            buffer_<%=cid%>.write(utf8Bytes_<%=cid%>);
+<%
+    			}else{//not binary
 %>
                             	row_<%=cid%>[<%=i%>] = <%=conn.getName() %>.<%=column.getLabel() %>;
-if(!"dm_secu".equals(<%="\""+column.getLabel()+"\"" %>)){
-	bool_<%=cid%>[<%=i%>] = true;
-}
+            if(!"dm_secu".equals(<%="\""+column.getLabel()+"\"" %>)){
+	           bool_<%=cid%>[<%=i%>] = true;
+                    }
 
 <%
+                      }
 							}else if(javaType == JavaTypesManager.DATE && pattern != null){
+               if("BINARYFILE".equals(fileType)){//timestamp are supported but not date for now. Need to check the databasetype and not talend that wrap t
 %>
+            buffer_<%=cid%>.writeInt(8);
+
+            org.joda.time.DateTime jdtime_<%=cid%> = new org.joda.time.DateTime(<%=conn.getName() %>.<%=column.getLabel() %>);
+            long millis_<%=cid%> = jdtime_<%=cid%>.getMillis();
+
+            // adjust time zone offset
+            millis_<%=cid%> += jdtime_<%=cid%>.getZone().getOffset(millis_<%=cid%>);
+
+            // pg time 0 is 2000-01-01 00:00:00
+            long secs_<%=cid%> = java.util.concurrent.TimeUnit.MILLISECONDS.toSeconds(millis_<%=cid%>);
+            // java epoc to postgres epoc
+            secs_<%=cid%> -= 946684800L;
+
+            // Julian/Greagorian calendar cutoff point
+            if (secs_<%=cid%> < -13165977600L) { // October 15, 1582 -> October 4, 1582
+              secs_<%=cid%> -= 86400 * 10;
+              if (secs_<%=cid%> < -15773356800L) { // 1500-03-01 -> 1500-02-28
+                int years_<%=cid%> = (int) ((secs_<%=cid%> + 15773356800L) / -3155823050L);
+                years_<%=cid%>++;
+                years_<%=cid%> -= years_<%=cid%> / 4;
+                secs_<%=cid%> += years_<%=cid%> * 86400;
+              }
+}
+
+            buffer_<%=cid%>.writeLong(java.util.concurrent.TimeUnit.SECONDS.toMicros(secs_<%=cid%>));
+<%
+    			}else{//not binary
+%>
+
     	                    	row_<%=cid%>[<%=i%>] = FormatterUtils.format_Date(<%=conn.getName() %>.<%=column.getLabel() %>, <%= date_format %>);
 bool_<%=cid%>[<%=i%>] = true;
 <%
+                      }
         					}else if(javaType == JavaTypesManager.BYTE_ARRAY){
+               if("BINARYFILE".equals(fileType)){
 %>
+            buffer_<%=cid%>.writeInt(1);
+            if (<%=conn.getName() %>.<%=column.getLabel() %>) {
+              buffer_<%=cid%>.writeByte(1);
+            } else {
+              buffer_<%=cid%>.writeByte(0);
+            }
+<%
+    			}else{//not binary
+%>
+
             	            	row_<%=cid%>[<%=i%>] = java.nio.charset.Charset.forName(<%=encoding %>).decode(java.nio.ByteBuffer.wrap(<%=conn.getName() %>.<%=column.getLabel() %>)).toString();
 <%
+                      }
+							}else if(javaType == JavaTypesManager.BOOLEAN){
+               if("BINARYFILE".equals(fileType)){
+%>
+            buffer_<%=cid%>.writeInt(1);
+            if (<%=conn.getName() %>.<%=column.getLabel() %>) {
+              buffer_<%=cid%>.writeByte(1);
+            } else {
+              buffer_<%=cid%>.writeByte(0);
+            }
+<%
+    			}else{//not binary
+%>
+    	                    	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+                      }
+
+							}else if(javaType == JavaTypesManager.INTEGER){
+               if("BINARYFILE".equals(fileType)){
+%>
+            buffer_<%=cid%>.writeInt(4);
+            buffer_<%=cid%>.writeInt(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+    			}else{//not binary
+%>
+    	                    	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+                      }
+
+							}else if(javaType == JavaTypesManager.DOUBLE){
+               if("BINARYFILE".equals(fileType)){
+%>
+            buffer_<%=cid%>.writeInt(8);
+            buffer_<%=cid%>.writeDouble(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+    			}else{//not binary
+%>
+    	                    	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+                      }
+
+							}else if(javaType == JavaTypesManager.FLOAT){
+               if("BINARYFILE".equals(fileType)){
+%>
+            buffer_<%=cid%>.writeInt(4);
+            buffer_<%=cid%>.writeFloat(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+    			}else{//not binary
+%>
+    	                    	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+                      }
+
+							}else if(javaType == JavaTypesManager.LONG){
+               if("BINARYFILE".equals(fileType)){
+%>
+            buffer_<%=cid%>.writeInt(8);
+            buffer_<%=cid%>.writeLong(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+    			}else{//not binary
+%>
+    	                    	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+                      }
+
+							}else if(javaType == JavaTypesManager.SHORT){
+               if("BINARYFILE".equals(fileType)){
+%>
+        buffer_<%=cid%>.writeInt(2);
+        buffer_<%=cid%>.writeShort(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+    			}else{//not binary
+%>
+    	                    	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+                      }
+
 							}else{
 %>
     	                    	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
 <%
         					}
 %>
-  						}
+  						}else{//value is  null
+<%
+    		if("BINARYFILE".equals(fileType)){
+%>
+            buffer_<%=cid%>.writeInt(-1);
+<%
+    			}
+%>
+}
 <%
 					}
 				}
-    			if("TXTFILE".equals(fileType)){
+
+    		if("BINARYFILE".equals(fileType)){
+%>
+    //foreach column of this line...
+ //             System.out.println(row_<%=cid %>.length);
+<%
+    			}else if("TXTFILE".equals(fileType)){
 %>
 					for (int i_<%=cid %> = 0; i_<%=cid %> < row_<%=cid %>.length; i_<%=cid %>++) {
 	               		String temp_<%=cid %> = row_<%=cid %>[i_<%=cid %>];
@@ -147,9 +311,14 @@ if(bool_<%=cid%>[i_<%=cid %>]){
                 	}
 <%
 				}
+
+    	if(!"BINARYFILE".equals(fileType)){	
 %>
 
     			out<%=cid %>.write(OUT_DELIM_ROWSEP_<%=cid %>);
+<%
+}
+%>
     			nb_line_<%=cid %>++;
                 <%if(isLog4jEnabled){%>
                     log.debug("<%=cid%> - Writing the record " + nb_line_<%=cid%> + ".");

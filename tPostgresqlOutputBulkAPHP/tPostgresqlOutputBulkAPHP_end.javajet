@@ -2,6 +2,7 @@
 	imports="
 		org.talend.core.model.process.INode 
 		org.talend.designer.codegen.config.CodeGeneratorArgument
+		org.talend.core.model.process.ElementParameterParser
 	"
 %>
 <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Log4j/Log4jFileUtil.javajet"%>
@@ -9,8 +10,20 @@
 	CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 	INode node = (INode)codeGenArgument.getArgument();
 	String cid = node.getUniqueName();
+        String fileType = ElementParameterParser.getValue(node, "__FILETYPE__");
+
+    	if("BINARYFILE".equals(fileType)){	
+%>
+    buffer_<%=cid%>.writeShort(-1);
+    buffer_<%=cid%>.flush();
+    buffer_<%=cid%>.close();
+<%
+}else{
 %>
 	out<%=cid %>.close();
+<%
+}
+%>
 	resourceMap.put("finish_<%=cid%>", true); 
 	globalMap.put("<%=cid %>_NB_LINE",nb_line_<%=cid %>);
 

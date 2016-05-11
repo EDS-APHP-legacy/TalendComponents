@@ -5,8 +5,13 @@ imports="
     org.talend.core.model.metadata.IMetadataTable
     org.talend.core.model.metadata.IMetadataColumn
     org.talend.designer.codegen.config.CodeGeneratorArgument
-java.util.Iterator
+    java.util.Iterator
     java.util.List
+
+        import java.io.BufferedOutputStream
+        import java.io.DataOutputStream
+        import java.io.IOException
+        import java.io.OutputStream
 " 
 %>
 
@@ -35,8 +40,10 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
         boolean isAppend = ("true").equals(ElementParameterParser.getValue(node,"__APPEND__"));
         
         boolean isIncludeHeader = ("true").equals(ElementParameterParser.getValue(node,"__INCLUDEHEADER__"));
-boolean skipSerial = ("true").equals(ElementParameterParser.getValue(node, "__SKIP_SERIAL__"));
-boolean onlyKey = ("true").equals(ElementParameterParser.getValue(node, "__ONLY_KEY__"));
+        
+        boolean skipSerial = ("true").equals(ElementParameterParser.getValue(node, "__SKIP_SERIAL__"));
+        
+        boolean onlyKey = ("true").equals(ElementParameterParser.getValue(node, "__ONLY_KEY__"));
 %>
 		int nb_line_<%=cid%> = 0;
 		
@@ -48,8 +55,22 @@ boolean onlyKey = ("true").equals(ElementParameterParser.getValue(node, "__ONLY_
 		final java.io.BufferedWriter out<%=cid %> = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
         		new java.io.FileOutputStream(file_<%=cid%>, <%= isAppend%>),<%= encoding%>));
        	resourceMap.put("out<%=cid %>", out<%=cid %>); 
+
 <%
-    	if("CSVFILE".equals(fileType)){	
+    	if("BINARYFILE".equals(fileType)){	
+%>
+
+	out<%=cid %>.close();//no need this
+    java.io.OutputStream out = new java.io.FileOutputStream(<%=filename %>);
+   java.io.DataOutputStream  buffer_<%=cid%> = new java.io.DataOutputStream(new java.io.BufferedOutputStream(out));
+    // 11 bytes required header
+    buffer_<%=cid%>.writeBytes("PGCOPY\n\377\r\n\0");
+    // 32 bit integer indicating no OID
+    buffer_<%=cid%>.writeInt(0);
+    // 32 bit header extension area length
+    buffer_<%=cid%>.writeInt(0);
+<%
+   } else	if("CSVFILE".equals(fileType)){	
 %>
         	char escapeChar_<%=cid %> = <%=escapeChar.length()==0||("").equals(escapeChar)?"'\\\\'" : escapeChar + ".charAt(0)"%>;
 

@@ -9,6 +9,8 @@
     org.talend.core.model.metadata.MappingTypeRetriever    
     org.talend.core.model.process.IConnection
     org.talend.core.model.process.IConnectionCategory
+    org.talend.core.model.metadata.types.JavaTypesManager
+    org.talend.core.model.metadata.types.JavaType
     java.io.*
     java.util.Scanner
     java.math.BigInteger
@@ -76,7 +78,38 @@ java.sql.Connection conn_<%=cid%> = null;
 		log4jCodeGenerateUtil.connect(node);
 	}
 	%>
-String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT WITH DELIMITER AS ';' NULL AS '' CSV HEADER ENCODING 'UTF-8' QUOTE '\"'  FORCE QUOTE *";
+
+
+String forcedTextColumns = "";
+<%
+List<IMetadataTable> metadatas = node.getMetadataList();
+if ((metadatas != null) && (metadatas.size() > 0)) 
+{//b
+ IMetadataTable metadata = metadatas.get(0);
+ if (metadata != null) 
+ {//a
+  List<IMetadataColumn> columns = metadata.getListColumns();	
+String sep = ",";
+    for (int i = 0; i < columns.size(); i++) 
+    {//4
+     IMetadataColumn column = columns.get(i);
+     JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
+ if(javaType == JavaTypesManager.STRING || javaType == JavaTypesManager.OBJECT){
+%>
+ forcedTextColumns += "<%=sep%>"+ "<%=column.getLabel()%>";
+<%
+} 
+   }//4
+ }//a
+}//b
+%>
+if(!forcedTextColumns.equals("")){
+ forcedTextColumns = " FORCE QUOTE "+ forcedTextColumns.substring(1);
+}
+
+String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT WITH DELIMITER AS ';' NULL AS '' CSV HEADER ENCODING 'UTF-8' QUOTE '\"'  " + forcedTextColumns;
+
+     globalMap.put("<%=cid %>_QUERY", bulkInputSql<%=cid%>);//natus
      org.postgresql.copy.PGCopyInputStream bulkInput_<%=cid%> = new  org.postgresql.copy.PGCopyInputStream((org.postgresql.core.BaseConnection)conn_<%=cid %>,bulkInputSql<%=cid%>);//natus
 
 class FastSplit {
