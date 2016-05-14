@@ -61,8 +61,8 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 %>
 
 	out<%=cid %>.close();//no need this
-    java.io.OutputStream out = new java.io.FileOutputStream(<%=filename %>);
-   java.io.DataOutputStream  buffer_<%=cid%> = new java.io.DataOutputStream(new java.io.BufferedOutputStream(out));
+    java.io.OutputStream out_<%=cid %> = new java.io.FileOutputStream(<%=filename %>);
+   java.io.DataOutputStream  buffer_<%=cid%> = new java.io.DataOutputStream(new java.io.BufferedOutputStream(out_<%=cid %>));
     // 11 bytes required header
     buffer_<%=cid%>.writeBytes("PGCOPY\n\377\r\n\0");
     // 32 bit integer indicating no OID

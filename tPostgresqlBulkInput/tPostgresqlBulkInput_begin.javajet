@@ -38,6 +38,7 @@ String port = ElementParameterParser.getValue(node, "__PORT__");
 String dbName = ElementParameterParser.getValue(node, "__DBNAME__");
 String userName = ElementParameterParser.getValue(node, "__USER__");
 String fileOut = ElementParameterParser.getValue(node, "__FILENAME_OUT__");
+String fileType = ElementParameterParser.getValue(node, "__FILETYPE__");
 %> 
 String tableName_<%=cid%> = null;
 String dbschema_<%=cid%> = null;
@@ -106,8 +107,18 @@ String sep = ",";
 if(!forcedTextColumns.equals("")){
  forcedTextColumns = " FORCE QUOTE "+ forcedTextColumns.substring(1);
 }
-
-String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT WITH DELIMITER AS ';' NULL AS '' CSV HEADER ENCODING 'UTF-8' QUOTE '\"'  " + forcedTextColumns;
+<%
+if("CSVFILE".equals(fileType)){
+%>
+String format_<%=cid%> =  "WITH DELIMITER AS ';' NULL AS '' CSV HEADER ENCODING 'UTF-8' QUOTE '\"'  " + forcedTextColumns;
+<%
+}else{
+%>
+String format_<%=cid%> = " BINARY";
+<%
+}
+%>
+String bulkInputSql<%=cid%> = "COPY (<%=dbquery%>) TO STDOUT " + format_<%=cid%>;
 
      globalMap.put("<%=cid %>_QUERY", bulkInputSql<%=cid%>);//natus
      org.postgresql.copy.PGCopyInputStream bulkInput_<%=cid%> = new  org.postgresql.copy.PGCopyInputStream((org.postgresql.core.BaseConnection)conn_<%=cid %>,bulkInputSql<%=cid%>);//natus
@@ -159,14 +170,29 @@ public String[] split(String delimiter) {
 }
 
 }
- java.io.FileOutputStream output<%=cid%> = new java.io.FileOutputStream(new java.io.File(<%=fileOut%>));
+
+java.io.FileOutputStream output<%=cid%> = new java.io.FileOutputStream(new java.io.File(<%=fileOut%>));
+<%
+if("CSVFILE".equals(fileType)){
+%>
 Integer resultBulkInput<%=cid%> ;
 while((resultBulkInput<%=cid%> = bulkInput_<%=cid%>.read())>0){
 output<%=cid%>.write(resultBulkInput<%=cid%>);
 output<%=cid%>.write( bulkInput_<%=cid%>.readFromCopy());
 }
-output<%=cid%>.close();
+<%
+}else{
+%>
+Integer resultBulkInput<%=cid%> ;
+while((resultBulkInput<%=cid%> = bulkInput_<%=cid%>.read())>0){
+output<%=cid%>.write(resultBulkInput<%=cid%>);
+output<%=cid%>.write( bulkInput_<%=cid%>.readFromCopy());
+}
 
+<%
+}
+%>
+output<%=cid%>.close();
 //Integer res<%=cid%>;
 //while((res<%=cid%> = bulkInput_<%=cid%>.read())>0){//removes the first char of the csv line -> "
 //String[] line_<%=cid%> = (new FastSplit(new String(java.math.BigInteger.valueOf(res<%=cid%>).toByteArray()),new String(bulkInput_<%=cid%>.readFromCopy()))).split("\"|\"");

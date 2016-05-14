@@ -156,12 +156,10 @@ bool_<%=cid%>[<%=i%>] = true;
         					}else if(javaType == JavaTypesManager.BYTE_ARRAY){
                if("BINARYFILE".equals(fileType)){
 %>
-            buffer_<%=cid%>.writeInt(1);
-            if (<%=conn.getName() %>.<%=column.getLabel() %>) {
-              buffer_<%=cid%>.writeByte(1);
-            } else {
-              buffer_<%=cid%>.writeByte(0);
-            }
+      buffer_<%=cid%>.writeInt(<%=conn.getName() %>.<%=column.getLabel() %>.length);
+        for(Byte b : <%=conn.getName() %>.<%=column.getLabel() %>) {
+            buffer_<%=cid%>.writeByte(b);
+        }
 <%
     			}else{//not binary
 %>

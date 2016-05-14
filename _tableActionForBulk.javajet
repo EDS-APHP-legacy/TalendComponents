@@ -49,7 +49,7 @@ if (!isParallelize) {
 			<%if(isLog4jEnabled_tableAction){%>
 				log.info("<%=cid%> - Creating table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>.");
 			<%}%>
-			stmtCreate_<%=cid%>.execute(("<%=manager.getCreateTableSQL(stmtStructure)%>)".replaceAll("VARCHAR[(]\\d+?[)]","text")).replaceAll("CREATE TABLE","CREATE UNLOGGED TABLE IF NOT EXISTS"));
+			stmtCreate_<%=cid%>.execute(("<%=manager.getCreateTableSQL(stmtStructure)%>)".replaceAll("VARCHAR[(]\\d+?[)]","text")).replaceAll("not null","").replaceAll("CREATE TABLE","CREATE UNLOGGED TABLE "));
 			<%if(isLog4jEnabled_tableAction){%>
 				log.info("<%=cid%> - Create table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has succeeded.");
 			<%}%>
