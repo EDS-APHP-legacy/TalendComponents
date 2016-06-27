@@ -97,7 +97,7 @@ String sep = ",";
      JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
  if(javaType == JavaTypesManager.STRING || javaType == JavaTypesManager.OBJECT){
 %>
- forcedTextColumns += "<%=sep%>"+ "<%=column.getLabel()%>";
+ forcedTextColumns += "<%=sep%>"+ "\"" + "<%=column.getLabel()%>"+"\"";
 <%
 } 
    }//4

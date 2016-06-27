@@ -30,6 +30,9 @@
 	String vcid = "";
 	IProcess process = node.getProcess();
 	final boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(process, "__LOG4J_ACTIVATE__"));
+    final	boolean emptyStringAsNull = ("true").equals(ElementParameterParser.getValue(node,"__EMPTY_NULL__"));
+    final	boolean isDefaultDateFormat = ("true").equals(ElementParameterParser.getValue(node,"__DEFAULT_DATE_FORMAT__"));
+	final String dateFormat = ElementParameterParser.getValue(node, "__DATE_FORMAT__");
 	
 	String destination = ElementParameterParser.getValue(node, "__DESTINATION__");
 	if(destination!=null && !"".equals(destination)){
@@ -724,14 +727,24 @@
 								%>
 									temp = <%=sourceValueName%>[columnIndexWithD_<%=cid%>];
 									if(temp.length() > 0){
-										<%=targetConnName %>.<%=column.getLabel() %> = temp;
+										<%=targetConnName %>.<%=column.getLabel() %> = temp; 
 									}else{
 										<%=targetConnName %>.<%=column.getLabel() %> = <%=defaultValue %>;
 									}
 								<%
 								}else{
 								%>
+<%
+                                    if(emptyStringAsNull){
+%>
+									<%=targetConnName %>.<%=column.getLabel() %> = <%=sourceValueName%>[columnIndexWithD_<%=cid%>].equals("")?null:<%=sourceValueName%>[columnIndexWithD_<%=cid%>];
+<%
+                                    }else{
+%>
 									<%=targetConnName %>.<%=column.getLabel() %> = <%=sourceValueName%>[columnIndexWithD_<%=cid%>];
+<%
+                                    }
+%>
 								<%
 								}
 							} else {
@@ -743,11 +756,32 @@
 									if(javaType == JavaTypesManager.DATE) {
 										if(checkNum || checkDate){
 										%>
-											<%=targetConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(<%=sourceValueName%>[columnIndexWithD_<%=cid%>], "yyyy-MM-dd HH:mm:ss", false);
+                                            <% 
+                                            if(!isDefaultDateFormat){
+                                                %>
+                                                    <%=targetConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(<%=sourceValueName%>[columnIndexWithD_<%=cid%>], <%= patternValue %>, false);
+                                                <% 
+                                                   }else{
+                                                        %>
+                                                            <%=targetConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(<%=sourceValueName%>[columnIndexWithD_<%=cid%>], <%=dateFormat%>, false);//add
+                                                        <%
+                                                    }
+                                                    %>
 										<%
 										}else{
 										%>
-											<%=targetConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(<%=sourceValueName%>[columnIndexWithD_<%=cid%>], "yyyy-MM-dd HH:mm:ss");
+
+                                            <% 
+                                            if(!isDefaultDateFormat){
+                                                %>
+                                                    <%=targetConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(<%=sourceValueName%>[columnIndexWithD_<%=cid%>], <%= patternValue %>);
+                                                <%
+                                            }else{
+                                                %>
+                                                    <%=targetConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(<%=sourceValueName%>[columnIndexWithD_<%=cid%>], <%=dateFormat%>);
+                                                <%
+                                            }
+                                        %>
 										<%
 										}
 									} else if(advancedSeparator && JavaTypesManager.isNumberType(javaType, column.isNullable())) {
