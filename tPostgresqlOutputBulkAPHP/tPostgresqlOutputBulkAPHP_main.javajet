@@ -46,7 +46,7 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 if( skipSerial ){
 for (Iterator<IMetadataColumn> iter = columns.listIterator(); iter.hasNext(); ) {
 	IMetadataColumn col = iter.next();
-	if (col.getType().equalsIgnoreCase("SERIAL")) {
+	if (col.getType().equalsIgnoreCase("SERIAL") || col.getType().equalsIgnoreCase("BIGSERIAL")) {
 		iter.remove();
 	}
 }

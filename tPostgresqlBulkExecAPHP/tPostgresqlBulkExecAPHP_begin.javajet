@@ -65,7 +65,7 @@ List<IMetadataColumn> columnList = getColumnList(node);
 			if(skipSerial){//natus
 				for (Iterator<IMetadataColumn> iter = columnList.listIterator(); iter.hasNext(); ) {
 					IMetadataColumn col = iter.next();
-					if (col.getType().equalsIgnoreCase("SERIAL")) {
+					if (col.getType().equalsIgnoreCase("SERIAL") || col.getType().equalsIgnoreCase("BIGSERIAL")) {
 						iter.remove();
 					}
 				}
