@@ -303,14 +303,5 @@ if(columnList != null && columnList.size() > 0) {
         System.out.println("[<%=cid%>] new rows sql\n" + insert_<%=cid %> + "\ndone");
         <%
     }
-    if(isDropTmp){
-%>
-    String droptmp_<%=cid%> = "DROP TABLE \"" + 
-    sourceTable_<%=cid%> + "\"" ;
-    java.sql.Statement stmtDropTmp_<%=cid%> = conn_<%=cid%>.createStatement();
-    stmtDropTmp_<%=cid%>.executeUpdate(droptmp_<%=cid%>);
-    stmtDropTmp_<%=cid%>.close();
-<%
-    }
 }
 %>

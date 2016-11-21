@@ -1,0 +1,101 @@
+<%@ jet 
+imports="
+    org.talend.core.model.process.INode 
+    org.talend.core.model.process.ElementParameterParser 
+    org.talend.core.model.metadata.IMetadataTable 
+    org.talend.designer.codegen.config.CodeGeneratorArgument
+    org.talend.core.model.metadata.MetadataTalendType
+    org.talend.core.model.metadata.MappingTypeRetriever
+    java.util.List
+    java.util.Map
+    java.util.HashMap
+    java.util.ArrayList
+    org.talend.commons.utils.StringUtils
+" 
+skeleton="../templates/db_output_bulk.skeleton"
+%>
+
+<%
+CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+INode node = (INode)codeGenArgument.getArgument();
+String cid = node.getUniqueName();
+List<IMetadataColumn> columnList = getColumnList(node);
+if(columnList != null && columnList.size() > 0) {
+    String strFieldName = ""; // temp variable to save name of field
+    boolean debug = ("true").equals(ElementParameterParser.getValue(node, "__DEBUG__"));
+    List<Map<String, String>> sourceKeys = (List<Map<String, String>>)ElementParameterParser.getObjectValue(node, "__SOURCE_KEYS__");
+    boolean isDropTmp = ("true").equals(ElementParameterParser.getValue(node, "__DROP_TMP__"));
+    boolean isEnableType1 = ("true").equals(ElementParameterParser.getValue(node, "__USE_L1__"));
+    List<Map<String, String>> type1Attributes = new ArrayList<Map<String, String>>();
+    if(isEnableType1) {
+        type1Attributes = (List<Map<String, String>>)ElementParameterParser.getObjectValue(node, "__L1_FIELDS__");
+    }
+    boolean isEnableType2 = ("true").equals(ElementParameterParser.getValue(node, "__USE_L2__"));
+    List<Map<String, String>> type2Attributes = new ArrayList<Map<String, String>>();
+    if(isEnableType2) {
+        type2Attributes = (List<Map<String, String>>)ElementParameterParser.getObjectValue(node, "__L2_FIELDS__");
+    }
+    String useExistingConnection = ElementParameterParser.getValue(node, "__USE_EXISTING_CONNECTION__");
+    if (("true").equals(useExistingConnection)) {
+        String connection = ElementParameterParser.getValue(node, "__CONNECTION__");
+        String connectionName = "conn_" + connection;
+        String schema = "schema_" + connection;
+        %>
+        java.sql.Connection conn_<%=cid%> = (java.sql.Connection) globalMap.get("<%=connectionName%>");
+        String schema_<%=cid%> = (String)globalMap.get("<%=schema%>");
+        <%
+    } else {
+        String dbname = ElementParameterParser.getValue(node, "__DBNAME__");    
+        String schema = ElementParameterParser.getValue(node, "__SCHEMA_DB__");    
+        String dbhost = ElementParameterParser.getValue(node, "__HOST__");    
+        String dbport = ElementParameterParser.getValue(node, "__PORT__");  
+        String dbuser = ElementParameterParser.getValue(node, "__USER__");   
+
+        %>
+        java.lang.Class.forName("org.postgresql.Driver");
+        String url_<%=cid %> = "jdbc:postgresql://" + <%=dbhost%> + ":" + <%=dbport%> + "/" + <%=dbname%>;
+        String dbUser_<%=cid %> = <%=dbuser%>;
+
+        <%
+        String passwordFieldName = "__PASS__";
+        %>
+
+        <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
+
+        String dbPwd_<%=cid %> = decryptedPassword_<%=cid%>;
+
+        java.sql.Connection conn_<%=cid%> = java.sql.DriverManager.getConnection(url_<%=cid %>, dbUser_<%=cid%>, dbPwd_<%=cid%>);
+        String schema_<%=cid%> = <%=schema%>;
+        <%
+    }
+    %>
+    String tableName_<%=cid%> = null;
+    String sourceTable_<%=cid%> = null;
+    if(schema_<%=cid%> != null && schema_<%=cid%>.trim().length() != 0) {
+        tableName_<%=cid%> = schema_<%=cid%> + "\".\"" + <%=ElementParameterParser.getValue(node, "__TABLE__")%>;
+        sourceTable_<%=cid%> = schema_<%=cid%> + "\".\"" + <%=ElementParameterParser.getValue(node, "__TABLE_SRC__")%>;
+    } else {
+        tableName_<%=cid%> = <%=ElementParameterParser.getValue(node, "__TABLE__")%>;
+        sourceTable_<%=cid%> = <%=ElementParameterParser.getValue(node, "__TABLE_SRC__")%>;
+    }
+    <%
+    String dbmsId = ElementParameterParser.getValue(node,"__MAPPING__");
+    String tableAction = ElementParameterParser.getValue(node, "__TABLE_ACTION__");
+    String tableName = ElementParameterParser.getValue(node, "__TABLE__");
+    boolean isEnableDebug = ("true").equals(ElementParameterParser.getValue(node, "__DEBUG__"));
+    if(isEnableDebug) {
+        %>
+        System.out.println("[<%=cid%>] new rows sql\n" + insert_<%=cid %> + "\ndone");
+        <%
+    }
+    if(isDropTmp){
+%>
+    String droptmp_<%=cid%> = "DROP TABLE \"" + 
+    sourceTable_<%=cid%> + "\"" ;
+    java.sql.Statement stmtDropTmp_<%=cid%> = conn_<%=cid%>.createStatement();
+    stmtDropTmp_<%=cid%>.executeUpdate(droptmp_<%=cid%>);
+    stmtDropTmp_<%=cid%>.close();
+<%
+    }
+}
+%>
