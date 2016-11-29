@@ -84,12 +84,25 @@ if("dm_secu".equals(<%="\""+column.getLabel()+"\"" %>)){
 					String pattern = column.getPattern() == null || column.getPattern().trim().length() == 0 ? null : column.getPattern();
 					if(JavaTypesManager.isJavaPrimitiveType( column.getTalendType(), column.isNullable())){
     		if("BINARYFILE".equals(fileType)){
+if(javaType == JavaTypesManager.LONG){
+%>
+            buffer_<%=cid%>.writeInt(8);
+            buffer_<%=cid%>.writeLong(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+
+							}else if(javaType == JavaTypesManager.SHORT){
+%>
+        buffer_<%=cid%>.writeInt(2);
+        buffer_<%=cid%>.writeShort(<%=conn.getName() %>.<%=column.getLabel() %>);
+<%
+
+							}else{
 %>
     //foreach column of this line...
-             // System.out.println(<%=javaType%>);
             buffer_<%=cid%>.writeInt(4);
             buffer_<%=cid%>.writeInt(<%=conn.getName() %>.<%=column.getLabel() %>);
 <%
+}
     			}else{//not binary
 %>
                         	row_<%=cid%>[<%=i%>] = String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>);
