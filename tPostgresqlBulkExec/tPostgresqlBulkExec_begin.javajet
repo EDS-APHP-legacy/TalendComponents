@@ -31,6 +31,7 @@ boolean standardConformingString= ("true").equals(ElementParameterParser.getValu
 boolean convertToUppercase = false; // not active this function
 boolean useExistingConnection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
 boolean skipSerial = "true".equals(ElementParameterParser.getValue(node, "__SKIP_SERIAL__"));
+boolean deleteFile = "true".equals(ElementParameterParser.getValue(node, "__DELETE_FILE__"));
 boolean onlyKey = "true".equals(ElementParameterParser.getValue(node, "__ONLY_KEY__"));
 %>
 int deletedCount_<%=cid%>=0;
@@ -567,6 +568,13 @@ String bulkInsertQuery<%=cid%> = "INSERT INTO \"" + tableName_<%=cid%> + "\" VAL
         <%
     }
 }
+
+	if(!deleteFile) {
+%>
+java.io.File filedel_<%=cid%> = new java.io.File(<%=file%>);
+filedel_<%=cid%>.delete();
+<%
+	}
 	if(!useExistingConnection) {
 		log4jCodeGenerateUtil.close(node);
 	}
